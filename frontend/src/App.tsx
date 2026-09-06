@@ -21,7 +21,9 @@ import { ThermalHistoryPage } from './pages/ThermalHistory/ThermalHistoryPage';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const isLanding = location.pathname === '/';
+  // The globe landing page renders its own header, so the app chrome is hidden
+  // there. Everything else — including the Fire Detection entry point — uses it.
+  const isLanding = location.pathname === '/landing';
 
   return (
     <div className="min-h-screen bg-[#05080D] flex flex-col font-sans selection:bg-[#3DB7D9] selection:text-[#05080D] overflow-hidden">
@@ -30,8 +32,10 @@ const AppContent: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto">
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          {/* Fire Detection is the entry point. */}
+          <Route path="/" element={<FireDetectPage />} />
           <Route path="/detect" element={<FireDetectPage />} />
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/command-center" element={<CommandCenterPage />} />
           <Route path="/incident/:incidentId" element={<IncidentAnalysisPage />} />
           <Route path="/incidents/:id" element={<IncidentDetailsPage />} />

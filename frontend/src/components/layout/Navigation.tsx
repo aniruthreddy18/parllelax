@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { path: '/detect', label: 'Fire Detection', icon: Flame },
+  { path: '/', label: 'Fire Detection', icon: Flame },
   { path: '/command-center', label: 'Operations Center', icon: LayoutDashboard },
   { path: '/incident/FW-1042', label: 'Incident Analysis', icon: Crosshair },
   { path: '/risk-impact', label: 'Risk & Impact', icon: Shield },
@@ -30,7 +30,7 @@ const NAV_ITEMS = [
   { path: '/system-status', label: 'System Status', icon: Cpu },
   { path: '/methodology', label: 'Methodology', icon: BookOpen },
   { path: '/mission-brief', label: 'Mission Brief', icon: Info },
-  { path: '/', label: 'Global Earth', icon: Globe2 },
+  { path: '/landing', label: 'Global Earth', icon: Globe2 },
 ];
 
 export const Navigation: React.FC = () => {
@@ -43,6 +43,9 @@ export const Navigation: React.FC = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              // "/" is a prefix of every route, so without `end` the Fire
+              // Detection tab would highlight on every page.
+              end={item.path === '/'}
               className={({ isActive }) =>
                 `flex items-center space-x-1.5 px-3 py-1 rounded text-xs transition whitespace-nowrap ${
                   isActive
