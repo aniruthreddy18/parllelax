@@ -1,0 +1,20 @@
+{
+  "name": "industrial-firewatch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-enabled geospatial system for industrial fire and thermal source monitoring.",
+  "scripts": {
+    "dev": "concurrently --names \"API,WEB\" --prefix-colors \"cyan,magenta\" --kill-others \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "cd backend && .venv/bin/uvicorn app.main:app --port 8000 --reload",
+    "dev:web": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "cd backend && .venv/bin/uvicorn app.main:app --port 8000",
+    "test": "cd backend && .venv/bin/python -m pytest tests/ -q",
+    "setup": "npm run setup:api && npm run setup:web",
+    "setup:api": "cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+    "setup:web": "npm --prefix frontend install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

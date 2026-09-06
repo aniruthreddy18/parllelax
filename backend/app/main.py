@@ -1,8 +1,10 @@
 import datetime
 import uuid
+from pathlib import Path
 from typing import List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.config import settings
@@ -98,8 +100,9 @@ EMERGENCY_CONTACTS_DB = [
 
 RECIPIENT_RECORDS_DB = []
 
-@app.get("/")
+@app.get("/api")
 def read_root():
+  """Service info. Lives under /api so `/` is free to serve the web app."""
   return {"name": settings.PROJECT_NAME, "version": settings.VERSION, "demo_mode": settings.DEMO_MODE}
 
 @app.get("/api/incidents", response_model=List[IncidentResponse])
@@ -329,3 +332,38 @@ def _seed_incidents():
       })
     except Exception as exc:  # a cold cache must not stop the API booting
       print(f"[seed] could not classify {point['id']}: {exc}")
+
+
+# ---------------------------------------------------------------------------
+# Production: serve the built frontend from this same process.
+#
+# In development the two run separately (Vite on :5173 proxying /api to :8000)
+# because Vite provides hot reload. For deployment there is no reason to run two
+# servers: `npm run build` emits static files, and FastAPI serves them here — so
+# the whole app is one process on one port.
+#
+# Mounted last so it never shadows the /api routes above.
+# ---------------------------------------------------------------------------
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def serve_frontend(full_path: str):
+  """Serve built assets, falling back to index.html for client-side routes.
+
+  Existence is checked per request, not at import: the build may well happen
+  after the server is already running, and a route registered conditionally at
+  startup would silently never appear.
+  """
+  index = FRONTEND_DIST / "index.html"
+  if not index.is_file():
+    raise HTTPException(
+      status_code=404,
+      detail="Frontend not built. Run `npm run build`, or use `npm run dev` for development.",
+    )
+
+  candidate = (FRONTEND_DIST / full_path).resolve()
+  # Guard against path traversal escaping the dist directory.
+  if full_path and candidate.is_file() and FRONTEND_DIST.resolve() in candidate.parents:
+    return FileResponse(candidate)
+  return FileResponse(index)
