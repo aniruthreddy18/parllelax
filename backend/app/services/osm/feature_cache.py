@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import math
 import threading
 from pathlib import Path
@@ -17,9 +18,17 @@ from typing import Any, Dict, Iterable, List, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
+#: Bundled cache, committed to the repo. Always readable; read-only on
+#: serverless platforms, whose filesystems are immutable apart from /tmp.
 CACHE_DIR = Path(__file__).resolve().parents[2] / "data" / "osm_cache"
 FEATURES_PATH = CACHE_DIR / "features.geojson"
 COVERAGE_PATH = CACHE_DIR / "covered_cells.json"
+
+#: Where newly fetched areas are written. Defaults to the bundled directory,
+#: which is right for local and container deploys. On a read-only filesystem
+#: point FIREWATCH_CACHE_DIR at a writable path (e.g. /tmp/osm_cache) so live
+#: fetches still persist for the life of the instance.
+WRITE_DIR = Path(os.environ.get("FIREWATCH_CACHE_DIR", str(CACHE_DIR)))
 
 #: ~5.5km at the equator. Coverage is tracked per cell rather than per point.
 CELL_SIZE_DEG = 0.05
@@ -55,6 +64,7 @@ class FeatureCache:
         self._version = 0
         #: Disk mtimes at load time, used to spot writes by other processes.
         self._signature: tuple[float, float] = (0.0, 0.0)
+        self._warned_readonly = False
 
     # -- persistence --------------------------------------------------------
 
@@ -65,7 +75,7 @@ class FeatureCache:
                 return path.stat().st_mtime
             except OSError:
                 return 0.0
-        return (mtime(FEATURES_PATH), mtime(COVERAGE_PATH))
+        return (mtime(WRITE_DIR / "features.geojson"), mtime(WRITE_DIR / "covered_cells.json"))
 
     def refresh_if_stale(self) -> bool:
         """Reload when another process (e.g. the prewarm script) has written.
@@ -102,6 +112,18 @@ class FeatureCache:
                 cells = json.loads(COVERAGE_PATH.read_text())
                 self._covered = {(int(y), int(x)) for y, x in cells}
 
+            # Merge anything written to a separate writable location.
+            if WRITE_DIR.resolve() != CACHE_DIR.resolve():
+                overlay_features = WRITE_DIR / "features.geojson"
+                overlay_cells = WRITE_DIR / "covered_cells.json"
+                if overlay_features.exists():
+                    for feature in json.loads(overlay_features.read_text()).get("features", []):
+                        self._features[feature["properties"]["osm_id"]] = feature
+                if overlay_cells.exists():
+                    self._covered.update(
+                        (int(y), int(x)) for y, x in json.loads(overlay_cells.read_text())
+                    )
+
             self._loaded = True
             self._signature = self._disk_signature()
             self._version += 1
@@ -111,13 +133,28 @@ class FeatureCache:
             )
 
     def save(self) -> None:
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        FEATURES_PATH.write_text(json.dumps({
-            "type": "FeatureCollection",
-            "features": list(self._features.values()),
-        }))
-        COVERAGE_PATH.write_text(json.dumps(sorted(self._covered)))
-        self._signature = self._disk_signature()
+        """Persist the cache, tolerating a read-only filesystem.
+
+        Serverless deployments cannot write into the bundle. Failing to persist
+        only costs a re-fetch later, so it must never take down a request that
+        has already produced a correct answer.
+        """
+        try:
+            WRITE_DIR.mkdir(parents=True, exist_ok=True)
+            (WRITE_DIR / "features.geojson").write_text(json.dumps({
+                "type": "FeatureCollection",
+                "features": list(self._features.values()),
+            }))
+            (WRITE_DIR / "covered_cells.json").write_text(json.dumps(sorted(self._covered)))
+            self._signature = self._disk_signature()
+        except OSError as exc:
+            if not self._warned_readonly:
+                logger.warning(
+                    "Cache is not writable (%s) — classification still works, but "
+                    "newly fetched areas will not persist. Set FIREWATCH_CACHE_DIR "
+                    "to a writable path to keep them.", exc,
+                )
+                self._warned_readonly = True
 
     # -- reads --------------------------------------------------------------
 
