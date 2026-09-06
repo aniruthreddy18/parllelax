@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-base: #05080d;
+    --bg-surface: #0d151e;
+    --bg-surface-elevated: #111b25;
+    --border-subtle: #253340;
+    --border-slate: #304150;
+    --primary-cyan: #3db7d9;
+    --severity-critical: #f04438;
+    --severity-high: #ff6b35;
+    --severity-medium: #e8a93a;
+    --severity-low: #39b978;
+    --text-primary: #f1f4f6;
+    --text-secondary: #a7b4c1;
+    --text-muted: #6f7e8d;
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #05080d;
+}
+::-webkit-scrollbar-thumb {
+  background: #253340;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #304150;
+}
+
+/* Leaflet & MapLibre Overrides */
+.maplibregl-popup-content {
+  background: #0d151e !important;
+  color: #f1f4f6 !important;
+  border: 1px solid #253340 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7) !important;
+  padding: 10px !important;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: #0d151e !important;
+}
+
+.maplibregl-ctrl-group {
+  background: #0d151e !important;
+  border: 1px solid #253340 !important;
+  border-radius: 6px !important;
+}
+
+.maplibregl-ctrl-group button {
+  border-bottom: 1px solid #253340 !important;
+}
+
+.maplibregl-ctrl-group button span {
+  filter: invert(1) !important;
+}
