@@ -104,6 +104,10 @@ export const ParallaxPage: React.FC = () => {
       attributionControl: false,
     });
     mapRef.current = map;
+    if (import.meta.env.DEV) {
+      // Debug handle: drive the globe from the console during development.
+      (window as unknown as Record<string, unknown>).__parallaxMap = map;
+    }
 
     // Keep the canvas matched to its container, or the globe is drawn at the
     // size the container had at construction time.
