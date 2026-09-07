@@ -76,3 +76,32 @@
 .maplibregl-ctrl-group button span {
   filter: invert(1) !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Landing hero animations.
+   The reference component declared these with Next.js `<style jsx>`, which does
+   not exist in Vite, so they live here instead.
+   --------------------------------------------------------------------------- */
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-down { animation: fade-in-down 0.8s ease-out forwards; }
+.animate-fade-in-up   { animation: fade-in-up 0.8s ease-out forwards; opacity: 0; }
+
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-600 { animation-delay: 0.6s; }
+.animation-delay-800 { animation-delay: 0.8s; }
+
+@keyframes scroll-hint {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50%      { transform: translateY(6px); opacity: 1; }
+}
+.animate-scroll-hint { animation: scroll-hint 1.8s ease-in-out infinite; }
