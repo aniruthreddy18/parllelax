@@ -1,0 +1,14 @@
+# One Render web service running the container defined in ./Dockerfile.
+# The frontend and API are the same process, so there is nothing to connect.
+services:
+  - type: web
+    name: parallax
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api
+    envVars:
+      # The bundled OSM cache is read-only in the image; newly fetched areas
+      # go here instead.
+      - key: FIREWATCH_CACHE_DIR
+        value: /tmp/osm_cache
